@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖形城堡 — 幾何探險</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans HK', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 50%, #F0E68C 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .clouds {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+        }
+        
+        .cloud {
+            position: absolute;
+            background: #fff;
+            border-radius: 100px;
+            opacity: 0.8;
+            animation: drift 20s infinite linear;
+        }
+        
+        .cloud::before {
+            content: '';
+            position: absolute;
+            background: #fff;
+            border-radius: 100px;
+        }
+        
+        @keyframes drift {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+        
+        .game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #4A5568;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+        
+        .castle-intro {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .castle-emoji {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            animation: castleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes castleGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px #FFD700); }
+            50% { filter: drop-shadow(0 0 30px #FFD700); }
+        }
+        
+        .tower-select {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .tower-btn {
+            background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 25px 35px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 180px;
+        }
+        
+        .tower-btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(102,126,234,0.4);
+        }
+        
+        .tower-btn.locked {
+            background: #A0AEC0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .tower-btn.locked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .tower-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .tower-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .tower-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .difficulty-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .diff-dot {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #CBD5E0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.3rem;
+        }
+        
+        .diff-dot:hover, .diff-dot.active {
+            border-color: #48BB78;
+            background: #C6F6D5;
+            transform: scale(1.15);
+        }
+        
+        .game-screen {
+            display: none;
+        }
+        
+        .game-screen.active {
+            display: block;
+        }
+        
+        .level-header {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .level-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .level-badge {
+            background: linear-gradient(145deg, #FFD93D, #F6AD55);
+            color: #744210;
+            padding: 12px 25px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .hearts {
+            font-size: 1.8rem;
+            letter-spacing: 5px;
+        }
+        
+        .progress-ring {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+        
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+        }
+        
+        .progress-ring .bg {
+            stroke: #E2E8F0;
+        }
+        
+        .progress-ring .progress {
+            stroke: #48BB78;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #48BB78;
+        }
+        
+        .game-board {
+            background: rgba(255,255,255,0.98);
+            border-radius: 25px;
+            padding: 35px;
+            min-height: 450px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        
+        .question-title {
+            text-align: center;
+            font-size: 1.6rem;
+            color: #2D3748;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .question-title .keyword {
+            color: #E53E3E;
+            font-weight: 700;
+        }
+        
+        /* 3D形狀展示區 */
+        .shape-showcase {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+            min-height: 200px;
+        }
+        
+        .shape-3d {
+            font-size: 5rem;
+            padding: 30px;
+            background: linear-gradient(145deg, #F7FAFC, #EDF2F7);
+            border-radius: 25px;
+            border: 4px solid #E2E8F0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .shape-3d:hover {
+            transform: scale(1.1) rotateY(15deg);
+            border-color: #63B3ED;
+            box-shadow: 0 15px 35px rgba(99,179,237,0.3);
+        }
+        
+        .shape-3d.selected {
+            border-color: #48BB78;
+            background: #C6F6D5;
+            transform: scale(1.15);
+        }
+        
+        .shape-3d.wrong {
+            border-color: #FC8181;
+            background: #FED7D7;
+            animation: shake 0.5s ease;
+        }
+        
+        /* 形狀名稱標籤 */
+        .shape-labels {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .shape-label {
+            padding: 12px 25px;
+            background: #EBF8FF;
+            border: 2px solid #90CDF4;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            color: #2B6CB0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .shape-label:hover {
+            background: #BEE3F8;
+            transform: translateY(-3px);
+        }
+        
+        .shape-label.selected {
+            background: #48BB78;
+            border-color: #48BB78;
+            color: #fff;
+        }
+        
+        /* 配對遊戲 */
+        .matching-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .match-card {
+            aspect-ratio: 1;
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .match-card.flipped {
+            transform: rotateY(180deg);
+            background: #fff;
+            border: 3px solid #48BB78;
+        }
+        
+        .match-card.matched {
+            background: #C6F6D5;
+            border: 3px solid #48BB78;
+            cursor: default;
+            animation: matchPulse 0.6s ease;
+        }
+        
+        @keyframes matchPulse {
+            0% { transform: scale(1) rotateY(180deg); }
+            50% { transform: scale(1.2) rotateY(180deg); }
+            100% { transform: scale(1) rotateY(180deg); }
+        }
+        
+        .match-card .front, .match-card .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .match-card .back {
+            transform: rotateY(180deg);
+        }
+        
+        /* 方向迷宮 */
+        .maze-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .maze-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 70px);
+            gap: 5px;
+            background: #E2E8F0;
+            padding: 15px;
+            border-radius: 15px;
+        }
+        
+        .maze-cell {
+            width: 70px;
+            height: 70px;
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            position: relative;
+        }
+        
+        .maze-cell.start {
+            background: #C6F6D5;
+            border: 3px solid #48BB78;
+        }
+        
+        .maze-cell.end {
+            background: #FED7D7;
+            border: 3px solid #FC8181;
+        }
+        
+        .maze-cell.path {
+            background: #EBF8FF;
+        }
+        
+        .maze-cell.current {
+            background: #FFD93D;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .direction-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            align-content: center;
+        }
+        
+        .dir-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            border: none;
+            background: #63B3ED;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .dir-btn:hover {
+            background: #4299E1;
+            transform: scale(1.1);
+        }
+        
+        .dir-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .dir-btn.up { grid-column: 2; }
+        .dir-btn.left { grid-column: 1; grid-row: 2; }
+        .dir-btn.right { grid-column: 3; grid-row: 2; }
+        .dir-btn.down { grid-column: 2; grid-row: 3; }
+        
+        .path-display {
+            background: #F7FAFC;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 80px;
+        }
+        
+        .path-display .label {
+            color: #718096;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+        
+        .path-arrows {
+            font-size: 2rem;
+            letter-spacing: 10px;
+        }
+        
+        /* 反饋動畫 */
+        .feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .feedback-overlay.show {
+            display: flex;
+        }
+        
+        .feedback-bubble {
+            background: #fff;
+            border-radius: 30px;
+            padding: 50px 70px;
+            text-align: center;
+            animation: popIn 0.4s ease;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        
+        .feedback-emoji {
+            font-size: 6rem;
+            margin-bottom: 20px;
+        }
+        
+        .feedback-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2D3748;
+        }
+        
+        /* 關卡完成 */
+        .level-complete {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .level-complete h2 {
+            font-size: 2.5rem;
+            color: #48BB78;
+            margin-bottom: 30px;
+        }
+        
+        .rewards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .reward-item {
+            font-size: 4rem;
+            animation: rewardBounce 0.6s ease infinite alternate;
+        }
+        
+        @keyframes rewardBounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+        
+        .reward-item:nth-child(2) { animation-delay: 0.2s; }
+        .reward-item:nth-child(3) { animation-delay: 0.4s; }
+        
+        .btn-next, .btn-back {
+            padding: 18px 40px;
+            border-radius: 15px;
+            border: none;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .btn-next {
+            background: #48BB78;
+            color: #fff;
+        }
+        
+        .btn-back {
+            background: #A0AEC0;
+            color: #fff;
+        }
+        
+        .btn-next:hover, .btn-back:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8rem; }
+            .matching-grid { grid-template-columns: repeat(3, 1fr); }
+            .maze-grid { grid-template-columns: repeat(5, 50px); }
+            .maze-cell { width: 50px; height: 50px; font-size: 1.5rem; }
+            .shape-3d { font-size: 3.5rem; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 雲朵背景 -->
+    <div class="clouds" id="clouds"></div>
+    
+    <!-- 反饋覆蓋層 -->
+    <div class="feedback-overlay" id="feedbackOverlay">
+        <div class="feedback-bubble">
+            <div class="feedback-emoji" id="feedbackEmoji">🎉</div>
+            <div class="feedback-text" id="feedbackText">答對了！</div>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <!-- 標題 -->
+        <div class="header">
+            <h1>🏰 圖形城堡 🏰</h1>
+            <p>小一數學：圖形與空間</p>
+        </div>
+        
+        <!-- 城堡選擇 -->
+        <div class="castle-intro" id="castleSelect">
+            <div class="castle-emoji">🏰</div>
+            <h2>歡迎來到圖形城堡！</h2>
+            <p style="color: #718096; margin: 15px 0;">選擇一座高塔開始你的探險</p>
+            
+            <div class="tower-select">
+                <button class="tower-btn" onclick="enterTower('3d')">
+                    <div class="tower-icon">🎲</div>
+                    <div class="tower-name">立體高塔</div>
+                    <div class="tower-desc">認識立體圖形</div>
+                </button>
+                <button class="tower-btn" onclick="enterTower('2d')">
+                    <div class="tower-icon">🔷</div>
+                    <div class="tower-name">平面高塔</div>
+                    <div class="tower-desc">認識平面圖形</div>
+                </button>
+                <button class="tower-btn" onclick="enterTower('direction')">
+                    <div class="tower-icon">🧭</div>
+                    <div class="tower-name">方向高塔</div>
+                    <div class="tower-desc">東南西北</div>
+                </button>
+            </div>
+            
+            <div class="difficulty-bar">
+                <div class="diff-dot active" onclick="setDifficulty(0)" title="初階">🌱</div>
+                <div class="diff-dot" onclick="setDifficulty(1)" title="中階">🌿</div>
+                <div class="diff-dot" onclick="setDifficulty(2)" title="進階">🌳</div>
+            </div>
+        </div>
+        
+        <!-- 遊戲畫面 -->
+        <div class="game-screen" id="gameScreen">
+            <div class="level-header">
+                <div class="level-info">
+                    <div class="level-badge" id="levelBadge">第 1 關</div>
+                    <div class="hearts" id="heartsDisplay">❤️❤️❤️</div>
+                </div>
+                <div class="progress-ring">
+                    <svg width="80" height="80">
+                        <circle class="bg" cx="40" cy="40" r="32"/>
+                        <circle class="progress" id="progressCircle" cx="40" cy="40" r="32"
+                            stroke-dasharray="201" stroke-dashoffset="201"/>
+                    </svg>
+                    <div class="progress-text" id="progressText">0/5</div>
+                </div>
+            </div>
+            
+            <div class="game-board" id="gameBoard">
+                <!-- 動態生成遊戲內容 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let gameState = {
+            tower: '3d',
+            difficulty: 0,
+            level: 1,
+            maxLevels: 5,
+            hearts: 3,
+            correct: 0,
+            currentQuestion: null,
+            flippedCards: [],
+            matchedPairs: 0,
+            mazePosition: { x: 0, y: 0 },
+            mazePath: []
+        };
+        
+        // 圖形資料
+        const shapesData = {
+            '3d': {
+                easy: [
+                    { emoji: '📦', name: '長方體', features: '有6個長方形面' },
+                    { emoji: '🎲', name: '正方體', features: '6個面都是正方形' },
+                    { emoji: '🥫', name: '圓柱體', features: '上下是圓形，可以滾動' }
+                ],
+                medium: [
+                    { emoji: '📦', name: '長方體', features: '有6個長方形面' },
+                    { emoji: '🎲', name: '正方體', features: '6個面都是正方形' },
+                    { emoji: '🥫', name: '圓柱體', features: '上下是圓形，可以滾動' },
+                    { emoji: '🔮', name: '球體', features: '圓圓的，到處都可以滾' },
+                    { emoji: '🏔️', name: '圓錐體', features: '尖尖的頂，圓圓的底' }
+                ],
+                hard: [
+                    { emoji: '📦', name: '長方體', features: '有6個長方形面，8個角' },
+                    { emoji: '🎲', name: '正方體', features: '6個正方形面，12條邊一樣長' },
+                    { emoji: '🥫', name: '圓柱體', features: '2個圓形底面，1個曲面' },
+                    { emoji: '🔮', name: '球體', features: '沒有平面，沒有角' },
+                    { emoji: '🏔️', name: '圓錐體', features: '1個圓形底，1個尖頂' },
+                    { emoji: '🔺', name: '三角柱', features: '2個三角形底面' }
+                ]
+            },
+            '2d': {
+                easy: [
+                    { emoji: '⭕', name: '圓形', features: '沒有角，圓圓的' },
+                    { emoji: '🔲', name: '正方形', features: '四條邊一樣長' },
+                    { emoji: '🔺', name: '三角形', features: '有三個角' }
+                ],
+                medium: [
+                    { emoji: '⭕', name: '圓形', features: '沒有角，圓圓的' },
+                    { emoji: '🔲', name: '正方形', features: '四條邊一樣長，四個直角' },
+                    { emoji: '▭', name: '長方形', features: '對邊一樣長，四個直角' },
+                    { emoji: '🔺', name: '三角形', features: '有三條邊，三個角' }
+                ],
+                hard: [
+                    { emoji: '⭕', name: '圓形', features: '沒有邊，沒有角' },
+                    { emoji: '🔲', name: '正方形', features: '四邊相等，四角直角' },
+                    { emoji: '▭', name: '長方形', features: '對邊相等，四角直角' },
+                    { emoji: '🔺', name: '三角形', features: '三邊三角，內角和180度' },
+                    { emoji: '⬡', name: '五邊形', features: '有五條邊' },
+                    { emoji: '⭐', name: '星形', features: '有尖角，像星星' }
+                ]
+            }
+        };
+        
+        // 方向資料
+        const directions = ['上', '下', '左', '右'];
+        const dirArrows = { '上': '⬆️', '下': '⬇️', '左': '⬅️', '右': '➡️' };
+        const dirMoves = { '上': { x: 0, y: -1 }, '下': { x: 0, y: 1 }, '左': { x: -1, y: 0 }, '右': { x: 1, y: 0 } };
+        
+        // 初始化雲朵
+        function initClouds() {
+            const container = document.getElementById('clouds');
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.width = (100 + Math.random() * 150) + 'px';
+                cloud.style.height = (40 + Math.random() * 40) + 'px';
+                cloud.style.top = Math.random() * 150 + 'px';
+                cloud.style.animationDelay = (i * 4) + 's';
+                cloud.style.animationDuration = (15 + Math.random() * 10) + 's';
+                
+                const before = document.createElement('style');
+                cloud.appendChild(before);
+                
+                container.appendChild(cloud);
+            }
+        }
+        
+        // 設置難度
+        function setDifficulty(level) {
+            gameState.difficulty = level;
+            document.querySelectorAll('.diff-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === level);
+            });
+        }
+        
+        // 進入高塔
+        function enterTower(tower) {
+            gameState.tower = tower;
+            gameState.level = 1;
+            gameState.hearts = 3;
+            gameState.correct = 0;
+            
+            document.getElementById('castleSelect').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('active');
+            
+            updateProgress();
+            generateLevel();
+        }
+        
+        // 更新進度
+        function updateProgress() {
+            document.getElementById('levelBadge').textContent = `第 ${gameState.level} 關`;
+            document.getElementById('heartsDisplay').textContent = '❤️'.repeat(gameState.hearts) + '🖤'.repeat(3 - gameState.hearts);
+            document.getElementById('progressText').textContent = `${gameState.correct}/${gameState.maxLevels}`;
+            
+            const progress = gameState.correct / gameState.maxLevels;
+            const circle = document.getElementById('progressCircle');
+            const circumference = 2 * Math.PI * 32;
+            circle.style.strokeDashoffset = circumference * (1 - progress);
+        }
+        
+        // 生成關卡
+        function generateLevel() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            switch(gameState.tower) {
+                case '3d':
+                case '2d':
+                    generateShapeLevel(board);
+                    break;
+                case 'direction':
+                    generateDirectionLevel(board);
+                    break;
+            }
+        }
+        
+        // 生成圖形關卡
+        function generateShapeLevel(board) {
+            const shapes = shapesData[gameState.tower][['easy', 'medium', 'hard'][gameState.difficulty]];
+            const levelType = Math.random() > 0.5 ? 'identify' : 'match';
+            
+            if (levelType === 'identify') {
+                // 識別題
+                const target = shapes[Math.floor(Math.random() * shapes.length)];
+                const question = document.createElement('div');
+                question.className = 'question-title';
+                question.innerHTML = `哪一個是<span class="keyword">${target.name}</span>？<br><small style="color:#718096">${target.features}</small>`;
+                board.appendChild(question);
+                
+                const showcase = document.createElement('div');
+                showcase.className = 'shape-showcase';
+                
+                const options = [...shapes].sort(() => Math.random() - 0.5).slice(0, 4);
+                if (!options.includes(target)) options[0] = target;
+                
+                options.forEach(shape => {
+                    const shapeEl = document.createElement('div');
+                    shapeEl.className = 'shape-3d';
+                    shapeEl.textContent = shape.emoji;
+                    shapeEl.onclick = () => checkShapeAnswer(shape.name === target.name, shapeEl, target);
+                    showcase.appendChild(shapeEl);
+                });
+                
+                board.appendChild(showcase);
+                gameState.currentQuestion = { answer: target.name, type: 'identify' };
+                
+            } else {
+                // 配對題
+                const question = document.createElement('div');
+                question.className = 'question-title';
+                question.textContent = '翻開卡片，配對相同的圖形！';
+                board.appendChild(question);
+                
+                const grid = document.createElement('div');
+                grid.className = 'matching-grid';
+                
+                const selectedShapes = shapes.slice(0, Math.min(4 + gameState.difficulty, shapes.length));
+                const cards = [];
+                selectedShapes.forEach(s => {
+                    cards.push({ type: 'emoji', content: s.emoji, name: s.name });
+                    cards.push({ type: 'name', content: s.name, name: s.name });
+                });
+                
+                cards.sort(() => Math.random() - 0.5);
+                
+                gameState.flippedCards = [];
+                gameState.matchedPairs = 0;
+                
+                cards.forEach((card, index) => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = 'match-card';
+                    cardEl.dataset.index = index;
+                    cardEl.dataset.name = card.name;
+                    cardEl.innerHTML = `
+                        <div class="front">❓</div>
+                        <div class="back">${card.type === 'emoji' ? card.content : `<span style="font-size:1rem">${card.content}</span>`}</div>
+                    `;
+                    cardEl.onclick = () => flipCard(cardEl, grid);
+                    grid.appendChild(cardEl);
+                });
+                
+                board.appendChild(grid);
+                gameState.currentQuestion = { type: 'match', totalPairs: selectedShapes.length };
+            }
+        }
+        
+        // 檢查圖形答案
+        function checkShapeAnswer(correct, element, target) {
+            document.querySelectorAll('.shape-3d').forEach(el => el.style.pointerEvents = 'none');
+            
+            if (correct) {
+                element.classList.add('selected');
+                showFeedback(true, `正確！這是${target.name}`);
+                handleCorrect();
+            } else {
+                element.classList.add('wrong');
+                showFeedback(false, '再想想看！');
+                handleWrong();
+            }
+        }
+        
+        // 翻牌
+        function flipCard(card, grid) {
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (gameState.flippedCards.length >= 2) return;
+            
+            card.classList.add('flipped');
+            gameState.flippedCards.push(card);
+            
+            if (gameState.flippedCards.length === 2) {
+                const [c1, c2] = gameState.flippedCards;
+                const match = c1.dataset.name === c2.dataset.name;
+                
+                setTimeout(() => {
+                    if (match) {
+                        c1.classList.add('matched');
+                        c2.classList.add('matched');
+                        gameState.matchedPairs++;
+                        
+                        if (gameState.matchedPairs >= gameState.currentQuestion.totalPairs) {
+                            showFeedback(true, '全部配對成功！');
+                            setTimeout(() => handleCorrect(), 1000);
+                        }
+                    } else {
+                        c1.classList.remove('flipped');
+                        c2.classList.remove('flipped');
+                    }
+                    gameState.flippedCards = [];
+                }, 800);
+            }
+        }
+        
+        // 生成方向關卡
+        function generateDirectionLevel(board) {
+            const question = document.createElement('div');
+            question.className = 'question-title';
+            
+            const levelTypes = ['follow', 'describe'];
+            const type = levelTypes[Math.min(gameState.level - 1, 1)];
+            
+            if (type === 'follow') {
+                question.innerHTML = '跟著指示走，<span class="keyword">小貓咪</span>要怎樣走到<span class="keyword">魚魚</span>那裡？';
+                board.appendChild(question);
+                
+                const mazeSize = 5;
+                const start = { x: 0, y: 0 };
+                const end = { x: 4, y: 4 };
+                
+                // 生成簡單路徑
+                const path = [];
+                let cx = 0, cy = 0;
+                while (cx < 4 || cy < 4) {
+                    if (cx < 4 && Math.random() > 0.5) {
+                        path.push('右');
+                        cx++;
+                    } else if (cy < 4) {
+                        path.push('下');
+                        cy++;
+                    } else {
+                        path.push('右');
+                        cx++;
+                    }
+                }
+                
+                gameState.mazePath = path;
+                gameState.mazePosition = { x: 0, y: 0 };
+                
+                const container = document.createElement('div');
+                container.className = 'maze-container';
+                
+                // 迷宮
+                const maze = document.createElement('div');
+                maze.className = 'maze-grid';
+                
+                for (let y = 0; y < mazeSize; y++) {
+                    for (let x = 0; x < mazeSize; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'maze-cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        if (x === 0 && y === 0) {
+                            cell.classList.add('start', 'current');
+                            cell.textContent = '🐱';
+                        } else if (x === 4 && y === 4) {
+                            cell.classList.add('end');
+                            cell.textContent = '🐟';
+                        }
+                        
+                        maze.appendChild(cell);
+                    }
+                }
+                
+                container.appendChild(maze);
+                
+                // 方向鍵
+                const pad = document.createElement('div');
+                pad.className = 'direction-pad';
+                ['上', '左', '右', '下'].forEach(dir => {
+                    const btn = document.createElement('button');
+                    btn.className = `dir-btn ${dir === '上' ? 'up' : dir === '下' ? 'down' : dir === '左' ? 'left' : 'right'}`;
+                    btn.textContent = dirArrows[dir];
+                    btn.onclick = () => moveInMaze(dir);
+                    pad.appendChild(btn);
+                });
+                
+                container.appendChild(pad);
+                board.appendChild(container);
+                
+                // 路徑顯示
+                const pathDisplay = document.createElement('div');
+                pathDisplay.className = 'path-display';
+                pathDisplay.innerHTML = `
+                    <div class="label">已走的路程：</div>
+                    <div class="path-arrows" id="pathArrows"></div>
+                `;
+                board.appendChild(pathDisplay);
+                
+                gameState.currentQuestion = { type: 'maze', path: path };
+                
+            } else {
+                // 描述方向題
+                const scenarios = [
+                    { from: '🏠', to: '🏫', text: '從家到學校' },
+                    { from: '🌳', to: '🏪', text: '從公園到商店' }
+                ];
+                const scene = scenarios[Math.floor(Math.random() * scenarios.length)];
+                
+                question.innerHTML = `如果${scene.text}，要往哪個方向走？<br>
+                    <span style="font-size:3rem; margin: 20px 0; display: inline-block;">
+                        ${scene.from} ➡️ ${scene.to}
+                    </span>`;
+                board.appendChild(question);
+                
+                const options = document.createElement('div');
+                options.className = 'shape-showcase';
+                
+                const correctDir = directions[Math.floor(Math.random() * 4)];
+                const opts = [correctDir, ...directions.filter(d => d !== correctDir).slice(0, 3)];
+                opts.sort(() => Math.random() - 0.5);
+                
+                opts.forEach(dir => {
+                    const btn = document.createElement('div');
+                    btn.className = 'shape-3d';
+                    btn.innerHTML = `${dirArrows[dir]}<br><small style="font-size:1rem">${dir}</small>`;
+                    btn.onclick = () => {
+                        const correct = dir === correctDir;
+                        showFeedback(correct, correct ? '方向正確！' : '再想想看！');
+                        if (correct) handleCorrect();
+                        else handleWrong();
+                    };
+                    options.appendChild(btn);
+                });
+                
+                board.appendChild(options);
+                gameState.currentQuestion = { type: 'describe' };
+            }
+        }
+        
+        // 迷宮移動
+        function moveInMaze(direction) {
+            const move = dirMoves[direction];
+            const newX = gameState.mazePosition.x + move.x;
+            const newY = gameState.mazePosition.y + move.y;
+            
+            // 邊界檢查
+            if (newX < 0 || newX >= 5 || newY < 0 || newY >= 5) {
+                showFeedback(false, '不能走出邊界！');
+                return;
+            }
+            
+            // 更新位置
+            document.querySelector('.maze-cell.current').classList.remove('current');
+            gameState.mazePosition = { x: newX, y: newY };
+            
+            const newCell = document.querySelector(`.maze-cell[data-x="${newX}"][data-y="${newY}"]`);
+            newCell.classList.add('current');
+            newCell.textContent = '🐱';
+            
+            // 更新路徑顯示
+            const pathArrows = document.getElementById('pathArrows');
+            pathArrows.textContent += dirArrows[direction];
+            
+            // 檢查到達終點
+            if (newX === 4 && newY === 4) {
+                showFeedback(true, '成功到達！');
+                setTimeout(() => handleCorrect(), 1000);
+            }
+        }
+        
+        // 顯示反饋
+        function showFeedback(correct, text) {
+            const overlay = document.getElementById('feedbackOverlay');
+            const emoji = document.getElementById('feedbackEmoji');
+            const msg = document.getElementById('feedbackText');
+            
+            emoji.textContent = correct ? '🎉' : '😅';
+            msg.textContent = text;
+            msg.style.color = correct ? '#48BB78' : '#ED8936';
+            
+            overlay.classList.add('show');
+            setTimeout(() => overlay.classList.remove('show'), correct ? 1500 : 1200);
+        }
+        
+        // 處理正確
+        function handleCorrect() {
+            gameState.correct++;
+            updateProgress();
+            
+            if (gameState.correct >= gameState.maxLevels) {
+                showLevelComplete();
+            } else {
+                gameState.level++;
+                setTimeout(() => {
+                    updateProgress();
+                    generateLevel();
+                }, 500);
+            }
+        }
+        
+        // 處理錯誤
+        function handleWrong() {
+            gameState.hearts--;
+            updateProgress();
+            
+            if (gameState.hearts <= 0) {
+                setTimeout(() => {
+                    alert('遊戲結束！再試一次吧！');
+                    location.reload();
+                }, 1000);
+            }
+        }
+        
+        // 顯示關卡完成
+        function showLevelComplete() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = `
+                <div class="level-complete">
+                    <h2>🎊 高塔征服完成！ 🎊</h2>
+                    <div class="rewards">
+                        <div class="reward-item">🏆</div>
+                        <div class="reward-item">⭐</div>
+                        <div class="reward-item">🎯</div>
+                    </div>
+                    <p style="color: #718096; font-size: 1.2rem; margin-bottom: 30px;">
+                        你成功完成了所有挑戰！
+                    </p>
+                    <button class="btn-next" onclick="location.reload()">🏰 返回城堡</button>
+                </div>
+            `;
+        }
+        
+        // 初始化
+        initClouds();
+    </script>
+</body>
+</html>
