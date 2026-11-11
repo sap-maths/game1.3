@@ -214,8 +214,11 @@
         }
         
         .progress-ring {
-            width: 80px;
-            height: 80px;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1;
+            max-width: 80px;
+            justify-self: center;
             position: relative;
         }
         
@@ -342,7 +345,7 @@
         /* 配對遊戲 */
         .matching-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 20px;
             max-width: 600px;
             margin: 0 auto;
@@ -404,7 +407,9 @@
         
         .maze-grid {
             display: grid;
-            grid-template-columns: repeat(5, 70px);
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            width: 100%;
+            max-width: 400px;
             gap: 5px;
             background: #E2E8F0;
             padding: 15px;
@@ -412,8 +417,9 @@
         }
         
         .maze-cell {
-            width: 70px;
-            height: 70px;
+            width: auto;
+            height: auto;
+            aspect-ratio: 1;
             background: #fff;
             border-radius: 10px;
             display: flex;
@@ -449,7 +455,9 @@
         
         .direction-pad {
             display: grid;
-            grid-template-columns: repeat(3, 80px);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            width: 100%;
+            max-width: 260px;
             gap: 10px;
             align-content: center;
         }
@@ -603,10 +611,98 @@
         
         @media (max-width: 768px) {
             .header h1 { font-size: 1.8rem; }
-            .matching-grid { grid-template-columns: repeat(3, 1fr); }
-            .maze-grid { grid-template-columns: repeat(5, 50px); }
-            .maze-cell { width: 50px; height: 50px; font-size: 1.5rem; }
+            .matching-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .maze-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            .maze-cell { width: auto; height: auto; font-size: 1.5rem; }
             .shape-3d { font-size: 3.5rem; padding: 20px; }
+        }
+
+        /* ===== game1.3 修復：手機顯示 + 頁面大小 + 美化（只改外觀，唔改題目/邏輯） ===== */
+        /* 縮放控制列：喺遊戲區外面，唔會被 zoom 縮放，唔遮內容 */
+        .zoom-bar {
+            display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: 12px;
+            background: rgba(255,255,255,0.95); border-radius: 16px;
+            padding: 10px 14px; margin: 0 0 16px 0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+        }
+        .zoom-bar .zoom-label { font-size: 1.125rem; font-weight: 700; color: #4A5568; }
+        .zoom-btn {
+            min-height: 48px; min-width: 96px; padding: 10px 18px;
+            border-radius: 14px; border: 2px solid #667eea;
+            background: #667eea; color: #fff;
+            font-family: inherit; font-size: 1.125rem; font-weight: 700;
+            cursor: pointer; touch-action: manipulation;
+        }
+        .zoom-btn:hover { background: #5a67d8; }
+        .zoom-btn:active { transform: scale(0.97); }
+        .zoom-value {
+            min-width: 64px; text-align: center;
+            font-size: 1.125rem; font-weight: 700; color: #2D3748;
+        }
+        #pageZoomTarget { width: 100%; }
+        /* 內文最少約 18px（1.125rem），可撳掣最少 48px 高 */
+        .header p { font-size: 1.125rem; }
+        .castle-intro p { font-size: 1.125rem; }
+        .tower-desc { font-size: 1.05rem; }
+        .tower-btn { min-height: 48px; }
+        .shape-label { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-next, .btn-back { min-height: 48px; }
+        .path-display .label { font-size: 1.05rem; }
+        .match-card .back span { font-size: 1.1rem !important; }
+        .shape-3d small { font-size: 1.05rem !important; }
+        .question-title small { font-size: 1.05rem; }
+        /* 迷宮格：固定 50/70px 改為彈性格，桌面維持 400px 闊（(400-30-20)/5=70px）、手機自動縮細 */
+        .maze-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; max-width: 400px; }
+        .maze-cell { width: auto; height: auto; aspect-ratio: 1; }
+        /* 方向盤：固定 80px 改為彈性格，桌面維持 260px 闊（80px 一格）、手機自動縮細 */
+        .direction-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; max-width: 260px; }
+        .dir-btn { width: 100%; height: auto; aspect-ratio: 1; max-width: 80px; justify-self: center; }
+        /* 配對格：fr 加 minmax(0,1fr)，防止內容撐闊 */
+        .matching-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        /* 獎勵列、路徑箭咀、反饋泡泡：加換行 / 限闊，防止出界 */
+        .rewards { flex-wrap: wrap; }
+        .path-arrows { overflow-wrap: break-word; word-break: break-all; }
+        .feedback-bubble { max-width: calc(100vw - 32px); box-sizing: border-box; }
+        .feedback-text { overflow-wrap: break-word; }
+        .btn-next, .btn-back { max-width: 100%; }
+        @media (max-width: 768px) {
+            .matching-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .maze-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+            .maze-cell { width: auto; height: auto; font-size: 1.5rem; }
+            .dir-btn { font-size: 1.6rem; }
+        }
+        @media (max-width: 480px) {
+            /* 收窄容器 padding，等內容有多啲闊度（360px：容器內容 336px、遊戲板內 304px） */
+            .game-container { padding: 12px; }
+            .castle-intro { padding: 20px 16px; }
+            .game-board { padding: 20px 16px; min-height: 0; }
+            .level-header { padding: 16px; }
+            .level-complete { padding: 24px 12px; }
+            .feedback-bubble { padding: 32px 20px; }
+            .feedback-text { font-size: 1.5rem; }
+            .feedback-emoji { font-size: 4rem; }
+            /* 三座塔變直排、每粒掣佔滿闊（唔超過 320px） */
+            .tower-select { flex-direction: column; align-items: stretch; gap: 12px; }
+            .tower-btn { min-width: 0; width: 100%; max-width: 320px; margin: 0 auto; padding: 18px 20px; }
+            .difficulty-bar { flex-wrap: wrap; }
+            .level-info { flex-wrap: wrap; gap: 12px; }
+            .hearts { letter-spacing: 2px; font-size: 1.5rem; }
+            .shape-showcase { gap: 16px; }
+            .shape-3d { font-size: 3rem; padding: 18px; }
+            .shape-labels { gap: 12px; }
+            .matching-grid { gap: 12px; }
+            .match-card { font-size: 2rem; }
+            .maze-container { gap: 20px; }
+            .maze-grid { gap: 4px; padding: 10px; }
+            .maze-cell { font-size: 1.3rem; border-radius: 8px; }
+            .direction-pad { gap: 8px; }
+            .path-arrows { font-size: 1.6rem; letter-spacing: 4px; }
+            .rewards { gap: 16px; }
+            .reward-item { font-size: 3rem; }
+            .btn-next, .btn-back { width: 100%; max-width: 320px; padding: 16px 24px; margin: 8px auto; display: block; }
+            .zoom-btn { min-width: 88px; padding: 10px 14px; }
+            .zoom-bar { gap: 10px; }
         }
     </style>
 </head>
@@ -623,6 +719,14 @@
     </div>
     
     <div class="game-container">
+        <!-- 頁面大小控制：喺遊戲區外面，唔會被縮放，唔遮內容 -->
+        <div class="zoom-bar" role="group" aria-label="頁面大小">
+            <span class="zoom-label">頁面大小</span>
+            <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="縮小頁面">A- 縮小</button>
+            <span class="zoom-value" id="zoomValue" aria-live="polite">100%</span>
+            <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="放大頁面">A+ 放大</button>
+        </div>
+        <div id="pageZoomTarget">
         <!-- 標題 -->
         <div class="header">
             <h1>🏰 圖形城堡 🏰</h1>
@@ -681,9 +785,43 @@
                 <!-- 動態生成遊戲內容 -->
             </div>
         </div>
+        </div>
     </div>
 
     <script>
+        // 頁面大小縮放（只縮放遊戲區，控制掣本身唔縮放；選擇記入 localStorage）
+        const ZOOM_KEY = 'game13-page-zoom';
+        const ZOOM_MIN = 80, ZOOM_MAX = 150, ZOOM_STEP = 10;
+        let pageZoom = 100;
+        function applyPageZoom() {
+            const target = document.getElementById('pageZoomTarget');
+            // 同 game1.1 / game1.2 一致：zoom 會改變佈局闊度，同步按比例收窄闊度，
+            // 令放大後視覺闊度維持不變，150% 時都唔會出現橫向捲動
+            if (target) { target.style.zoom = pageZoom + '%'; target.style.width = (10000 / pageZoom) + '%'; }
+            const label = document.getElementById('zoomValue');
+            if (label) label.textContent = pageZoom + '%';
+        }
+        function setPageZoom(value) {
+            pageZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(value / ZOOM_STEP) * ZOOM_STEP));
+            applyPageZoom();
+            try { localStorage.setItem(ZOOM_KEY, String(pageZoom)); } catch (e) {}
+        }
+        function changePageZoom(delta) { setPageZoom(pageZoom + delta); }
+        function initPageZoom() {
+            try {
+                const saved = localStorage.getItem(ZOOM_KEY);
+                if (saved !== null) {
+                    const n = parseInt(saved, 10);
+                    if (!isNaN(n)) pageZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(n / ZOOM_STEP) * ZOOM_STEP));
+                }
+            } catch (e) {}
+            applyPageZoom();
+            const outBtn = document.getElementById('zoomOutBtn');
+            if (outBtn) outBtn.addEventListener('click', function () { changePageZoom(-ZOOM_STEP); });
+            const inBtn = document.getElementById('zoomInBtn');
+            if (inBtn) inBtn.addEventListener('click', function () { changePageZoom(ZOOM_STEP); });
+        }
+
         // 遊戲狀態
         let gameState = {
             tower: '3d',
@@ -1157,6 +1295,7 @@
         }
         
         // 初始化
+        initPageZoom();
         initClouds();
     </script>
 </body>
